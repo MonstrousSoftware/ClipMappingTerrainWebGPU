@@ -1,8 +1,10 @@
-// basic ModelBatch shader
+// Terrain shder based on the standard ModelBatch shader
 // Copyright 2025 Monstrous Software.
 // Licensed under the Apache License, Version 2.0 (the "License");
 
 // Note this is an uber shader with conditional compilation depending on #define values from the shader prefix
+
+// removed skinning & morphing
 
 struct DirectionalLight {
     color: vec4f,
@@ -50,6 +52,10 @@ struct FrameUniforms {
     shadowFilterMode: f32,      // 0 = grid PCF, 1 = rotated Poisson disk PCF
     cascadeBlendFraction: f32,  // fraction of cascade range used for blending (0 = off, e.g. 0.1 = 10%)
 #endif
+    // specific to terrain shader
+    heightMapSize : f32,
+    scale : f32,
+    amplitude : f32,
 };
 
 struct ModelUniforms {
@@ -103,10 +109,6 @@ struct MaterialUniforms {
 // renderables
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
-// Skinning
-#ifdef SKIN
-    @group(3) @binding(0) var<storage, read> jointMatrices: array<mat4x4f>;
-#endif
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -122,36 +124,6 @@ struct VertexInput {
 #endif
 #ifdef COLOR
     @location(5) color: vec4f,
-#endif
-#ifdef SKIN
-    @location(6) joints: vec4f,
-    @location(7) weights: vec4f,
-#endif
-#ifdef MORPH
-#ifdef MORPH_0
-    @location(8) morph_pos0: vec3f,
-#endif
-#ifdef MORPH_1
-    @location(9) morph_pos1: vec3f,
-#endif
-#ifdef MORPH_2
-    @location(10) morph_pos2: vec3f,
-#endif
-#ifdef MORPH_3
-    @location(11) morph_pos3: vec3f,
-#endif
-#ifdef MORPH_4
-    @location(12) morph_pos4: vec3f,
-#endif
-#ifdef MORPH_5
-    @location(13) morph_pos5: vec3f,
-#endif
-#ifdef MORPH_6
-    @location(14) morph_pos6: vec3f,
-#endif
-#ifdef MORPH_7
-    @location(15) morph_pos7: vec3f,
-#endif
 #endif
 
 };
@@ -181,58 +153,25 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    var out: VertexOutput;
 
    var pos = in.position;
-#ifdef MORPH
-#ifdef MORPH_0
-   pos += instances[instance].morphWeights[0] * in.morph_pos0;
-#endif
-#ifdef MORPH_1
-   pos += instances[instance].morphWeights[1] * in.morph_pos1;
-#endif
-#ifdef MORPH_2
-   pos += instances[instance].morphWeights[2] * in.morph_pos2;
-#endif
-#ifdef MORPH_3
-   pos += instances[instance].morphWeights[3] * in.morph_pos3;
-#endif
-#ifdef MORPH_4
-   pos += instances[instance].morphWeights2[0] * in.morph_pos4;
-#endif
-#ifdef MORPH_5
-   pos += instances[instance].morphWeights2[1] * in.morph_pos5;
-#endif
-#ifdef MORPH_6
-   pos += instances[instance].morphWeights2[2] * in.morph_pos6;
-#endif
-#ifdef MORPH_7
-   pos += instances[instance].morphWeights2[3] * in.morph_pos7;
-#endif
-#endif
 
    var normal_attr = vec3f(0,1,0);
 #ifdef NORMAL
    normal_attr = in.normal;
 #endif
 
-#ifdef SKIN
-     // Get relevant 4 bone matrices
-     // joint matrix is already multiplied by inv bind matrix in Node.calculateBoneTransform
-     let joint0 = jointMatrices[u32(in.joints[0])];
-     let joint1 = jointMatrices[u32(in.joints[1])];
-     let joint2 = jointMatrices[u32(in.joints[2])];
-     let joint3 = jointMatrices[u32(in.joints[3])];
 
-     // Compute influence of joint based on weight
-     let skinMatrix =
-       joint0 * in.weights[0] +
-       joint1 * in.weights[1] +
-       joint2 * in.weights[2] +
-       joint3 * in.weights[3];
+   var worldPosition =  instances[instance].modelMatrix * vec4f(pos, 1.0);
 
-     // Bone transformed mesh
-   let worldPosition =   instances[instance].modelMatrix * skinMatrix * vec4f(pos, 1.0);
-#else
-   let worldPosition =  instances[instance].modelMatrix * vec4f(pos, 1.0);
-#endif
+   let terrainWorldSize:f32 = uFrame.heightMapSize * uFrame.scale;
+
+   // find uv coordinate in height map
+   // offset by 0.5 because terrain is centred on origin
+   let v_UV = (worldPosition.xz / terrainWorldSize) + vec2f(0.5);
+   let hh = sin(worldPosition.x / 1000.0 + cos(worldPosition.z/ 1700.0));
+   let heightSample : f32 = select(0.0, hh, (v_UV.x >= 0.0 && v_UV.x <= 1.0 && v_UV.y >= 0.0 && v_UV.y <= 1.0));
+
+
+    worldPosition.y = uFrame.amplitude * heightSample;
 
    out.position =   uFrame.projectionViewTransform * worldPosition;
    out.worldPos = worldPosition.xyz;
@@ -412,14 +351,15 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
 
 #endif // LIGHTING
 
-    let emissiveColor = textureSample(emissiveTexture, emissiveSampler, in.uv).rgb;
-    color = color + vec4f(emissiveColor, 0);
+//    let emissiveColor = textureSample(emissiveTexture, emissiveSampler, in.uv).rgb;
+//    color = color + vec4f(emissiveColor, 0);
 
 
 #ifdef FOG
     color = vec4f(mix(color.rgb, uFrame.fogColor.rgb, in.fogDepth), color.a);
 #endif
 
+    //color = vec4f(1,0,0,1);
 
 #ifdef GAMMA_CORRECTION
     let linearColor: vec3f = pow(color.rgb, vec3f(1/2.2));

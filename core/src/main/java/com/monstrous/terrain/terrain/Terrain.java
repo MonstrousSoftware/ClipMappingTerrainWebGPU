@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.gdx.webgpu.graphics.WgTexture;
 import com.monstrous.gdx.webgpu.graphics.g3d.WgModelBatch;
+import com.monstrous.gdx.webgpu.graphics.g3d.shaders.WgDefaultShaderProvider;
 
 
 public class Terrain implements Disposable {
@@ -64,15 +65,13 @@ public class Terrain implements Disposable {
         renderable.environment = new Environment();     // force lighting so that fog will work
 
 
-        terrainBatch = new WgModelBatch();
-
-        //terrainShader = new TerrainShader(renderable, heightMap.getSize(), scale, amplitude);
-//        terrainBatch = new WgModelBatch(new DefaultShaderProvider() {
-//            @Override
-//            protected Shader createShader(final Renderable renderable) {
-//                return terrainShader;
-//            }
-//        });
+        terrainBatch = new WgModelBatch(new WgDefaultShaderProvider() {
+            @Override
+            protected Shader createShader(final Renderable renderable) {
+                terrainShader = new TerrainShader(renderable, heightMap.getSize(), scale, amplitude);
+                return terrainShader;
+            }
+        });
     }
 
     public void setWireFrameMode(boolean mode){

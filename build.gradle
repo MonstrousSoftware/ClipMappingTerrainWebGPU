@@ -24,10 +24,10 @@ allprojects {
     }
   }
 
-//  configurations.configureEach {
-//    // Check for updates every sync
-//    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
-//  }
+  configurations.configureEach {
+    // Check for updates every sync
+    resolutionStrategy.cacheDynamicVersionsFor 0, 'seconds'
+  }
 }
 
 

@@ -3,20 +3,16 @@ package com.monstrous.terrain.terrain;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.Renderable;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
-import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
+import com.monstrous.gdx.webgpu.graphics.g3d.WgModelBatch;
 import com.monstrous.gdx.webgpu.graphics.g3d.shaders.WgDefaultShader;
 
-/** By creating a dedicated TerrainShade class we can add some relevant uniforms */
-public class TerrainShader extends DefaultShader {
+
+/** By creating a dedicated TerrainShader class we can add some relevant uniforms */
+public class TerrainShader extends WgDefaultShader {
     // terrain parameters
     private int heightMapSize;  // dimension of height map in vertices per side
     private float scale; // horizontal scale of one height map texel
     private float amplitude; // height multiplication factor
-    // uniform locations
-    private int u_heightMapSize;
-    private int u_scale;
-    private int u_amplitude;
 
 
     /** Simple constructor that uses some default settings. Use setXXX() to
@@ -30,14 +26,20 @@ public class TerrainShader extends DefaultShader {
      * Terrain parameters can be changed at every frame via the setXXX() methods
      * */
     public TerrainShader(Renderable renderable, int heightMapSize, float scale, float amplitude) {
-        super(renderable, new Config(
-            Gdx.files.internal("shaders/terrain.vertex.glsl").readString(),
-            Gdx.files.internal("shaders/terrain.fragment.glsl").readString() ) );
+        //super(renderable);
+        super(renderable, new WgModelBatch.Config( Gdx.files.internal("shaders/terrain.wgsl").readString()));
         setHeightMapSize(heightMapSize);
         setScale(scale);
         setAmplitude(amplitude);
     }
 
+    @Override
+    protected void defineUniforms() {
+        super.defineUniforms();
+        defineUniform("heightMapSize", 4);
+        defineUniform("scale", 4);
+        defineUniform("amplitude", 4);
+    }
 
     public void setHeightMapSize(int verticesPerSide){
         heightMapSize = verticesPerSide;
@@ -60,31 +62,22 @@ public class TerrainShader extends DefaultShader {
     }
 
     // assumes the shader is only ever called for terrain renderables
+    // switch shader on change in primitive type (triangles vs/ lines)
     @Override
     public boolean canRender(Renderable renderable) {
+        if (renderable.meshPart.primitiveType != primitiveType)
+            return false;
+
         return true;
     }
 
 
-    // called once
     @Override
-    public void init() {
-        super.init();
-
-        // get locations of specific uniforms to use later
-        u_heightMapSize = program.getUniformLocation("u_heightMapSize");
-        u_scale = program.getUniformLocation("u_scale");
-        u_amplitude = program.getUniformLocation("u_amplitude");
-    }
-
-    // called per frame
-    @Override
-    public void begin(Camera camera, RenderContext context) {
-        super.begin(camera, context);
-
+    public void setUniforms(Camera camera, Renderable renderable) {
+        super.setUniforms(camera, renderable);
         // set uniforms
-        program.setUniformi(u_heightMapSize, heightMapSize);
-        program.setUniformf(u_scale, scale);
-        program.setUniformf(u_amplitude, amplitude);
+        super.binder.setUniform("heightMapSize", heightMapSize);
+        super.binder.setUniform("scale", scale);
+        super.binder.setUniform("amplitude", amplitude);
     }
 }
