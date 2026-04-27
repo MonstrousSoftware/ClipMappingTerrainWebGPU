@@ -14,7 +14,7 @@ public class Launcher {
         config.setTitle("ClipMappingTerrain");
         config.enableGPUtiming = false;
         config.useVsync(false);
-        config.backendWebGPU = JWebGPUBackend.WGPU;
+        config.backendWebGPU = JWebGPUBackend.DAWN;
         //config.setForegroundFPS(WgDesktopApplicationConfiguration.getDisplayMode().refreshRate + 1);
         config.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
 

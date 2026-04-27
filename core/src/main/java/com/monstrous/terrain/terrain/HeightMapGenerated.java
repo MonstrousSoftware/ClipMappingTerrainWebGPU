@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Disposable;
 import com.monstrous.gdx.webgpu.graphics.WgTexture;
+import com.monstrous.gdx.webgpu.wrappers.WebGPUBuffer;
 
 // BROKEN?
 
@@ -25,6 +26,10 @@ public class HeightMapGenerated implements HeightMap, Disposable {
         noise = new Noise();
         // generate a noise map
         heightMap = noise.generateSmoothedPerlinMap(mapSize, mapSize, 0,0, PERLIN_GRID_SIZE);
+    }
+
+    public WebGPUBuffer getBuffer(){
+        return null;
     }
 
     @Override

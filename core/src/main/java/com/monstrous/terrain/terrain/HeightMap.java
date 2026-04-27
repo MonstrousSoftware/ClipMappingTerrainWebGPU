@@ -2,6 +2,7 @@ package com.monstrous.terrain.terrain;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.Disposable;
+import com.monstrous.gdx.webgpu.wrappers.WebGPUBuffer;
 
 public interface HeightMap extends Disposable {
 
@@ -12,5 +13,8 @@ public interface HeightMap extends Disposable {
     public float get(float wx, float wz);
 
     public int getSize();
+
+    public WebGPUBuffer getBuffer();
+
 
 }

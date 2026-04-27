@@ -68,7 +68,8 @@ public class Terrain implements Disposable {
         terrainBatch = new WgModelBatch(new WgDefaultShaderProvider() {
             @Override
             protected Shader createShader(final Renderable renderable) {
-                terrainShader = new TerrainShader(renderable, heightMap.getSize(), scale, amplitude);
+                terrainShader = new TerrainShader(renderable, heightMap, scale, amplitude);
+               // terrainShader.setHeightMap(heightMap);
                 return terrainShader;
             }
         });

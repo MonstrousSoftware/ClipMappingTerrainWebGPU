@@ -109,6 +109,7 @@ struct MaterialUniforms {
 // renderables
 @group(2) @binding(0) var<storage, read> instances: array<ModelUniforms>;
 
+@group(3) @binding(1) var<storage, read> heightMap: array<f32>;
 
 struct VertexInput {
     @location(0) position: vec3f,
@@ -166,20 +167,20 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 
    // find uv coordinate in height map
    // offset by 0.5 because terrain is centred on origin
-   let v_UV = (worldPosition.xz / terrainWorldSize) + vec2f(0.5);
-   let hh = sin(worldPosition.x / 1000.0 + cos(worldPosition.z/ 1700.0));
-   let heightSample : f32 = select(0.0, hh, (v_UV.x >= 0.0 && v_UV.x <= 1.0 && v_UV.y >= 0.0 && v_UV.y <= 1.0));
+   let uv:vec2f = (worldPosition.xz / terrainWorldSize) + vec2f(0.5);
+   let uvi: vec2i = vec2i(uv * uFrame.heightMapSize);
+   //let hh = sin(worldPosition.x / 1000.0 + cos(worldPosition.z/ 1700.0));
+   let level :u32 = 0;
+   let hh:f32 = 1.0; //vec4f = textureLoad(heightMapTexture, uvi);
+   let heightSample : f32 = select(0.0, hh, (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0));
 
 
-    worldPosition.y = uFrame.amplitude * heightSample;
+   worldPosition.y = uFrame.amplitude * heightSample;
 
    out.position =   uFrame.projectionViewTransform * worldPosition;
    out.worldPos = worldPosition.xyz;
-#ifdef TEXTURE_COORDINATE
-   out.uv = in.uv;
-#else
-   out.uv = vec2f(0);
-#endif
+
+   out.uv = uv;
 
 #ifdef COLOR
    var diffuseColor = in.color;
@@ -227,11 +228,11 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
 
 @fragment
 fn fs_main(in : VertexOutput) -> @location(0) vec4f {
-#ifdef TEXTURE_COORDINATE
+//#ifdef TEXTURE_COORDINATE
    var color = in.color * textureSample(diffuseTexture, diffuseSampler, in.uv);
-#else
-   var color = in.color;
-#endif
+//#else
+//   var color = in.color;
+//#endif
 
 #ifdef CSM_SHADOW_MAP
     let visibility = getCsmVisibility(in.worldPos, in.position.xy);
@@ -365,18 +366,6 @@ fn fs_main(in : VertexOutput) -> @location(0) vec4f {
     let linearColor: vec3f = pow(color.rgb, vec3f(1/2.2));
     color = vec4f(linearColor, color.a);
 #endif
-
-    //return(vec4f(0.0, roughness, metallic, 1.0));
-
-    //return vec4f(emissiveColor, 1.0);
-    //return vec4f(normal, 1.0);
-    //return vec4f(viewVec, 1.0);
-    //return vec4f(rdir, 1.0);
-    //return vec4f(uFrame.ambientLight.rgb, 1.0);
-    //return material.diffuseColor;
-    //return vec4f(in.fogDepth, 0, 0, 1);
-    //return vec4f(ambient, 1.0);
-
     return color;
 };
 
