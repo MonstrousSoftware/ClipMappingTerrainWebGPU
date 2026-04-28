@@ -171,7 +171,8 @@ fn vs_main(in: VertexInput, @builtin(instance_index) instance: u32) -> VertexOut
    let uvi: vec2i = vec2i(uv * uFrame.heightMapSize);
    //let hh = sin(worldPosition.x / 1000.0 + cos(worldPosition.z/ 1700.0));
    let level :u32 = 0;
-   let hh:f32 = 1.0; //vec4f = textureLoad(heightMapTexture, uvi);
+   let hh:f32 = heightMap[uvi.y * 2048 + uvi.x];
+   //let hh:f32 = 1.0; //vec4f = textureLoad(heightMapTexture, uvi);
    let heightSample : f32 = select(0.0, hh, (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0));
 
 

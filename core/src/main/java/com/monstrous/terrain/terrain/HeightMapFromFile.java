@@ -4,6 +4,7 @@ package com.monstrous.terrain.terrain;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.Disposable;
 import com.github.xpenatan.webgpu.WGPUBufferUsage;
 import com.github.xpenatan.webgpu.WGPUTextureFormat;
@@ -12,6 +13,8 @@ import com.monstrous.gdx.webgpu.graphics.WgTexture;
 import com.monstrous.gdx.webgpu.wrappers.WebGPUBuffer;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
 
 
 public class HeightMapFromFile implements HeightMap, Disposable {
@@ -50,8 +53,18 @@ public class HeightMapFromFile implements HeightMap, Disposable {
         mapSize = heightMapTexture.getWidth();  // assumes a square
 
         // create a GPU buffer
-        buffer = new WebGPUBuffer("height map", (WGPUBufferUsage)WGPUBufferUsage.CopyDst.or(WGPUBufferUsage.Storage), numBytes);
-        buffer.write(0, bytes, numBytes);
+        // working buffer in native memory to use as input to WriteBuffer
+        ByteBuffer dataBuf = BufferUtils.newUnsafeByteBuffer(numBytes * Float.BYTES);
+        dataBuf.order(ByteOrder.LITTLE_ENDIAN);
+        FloatBuffer floatData = dataBuf.asFloatBuffer();
+        for(int i = 0; i < bytes.limit(); i++){
+            int b = bytes.get(i) & 0xFF;
+            floatData.put(b/255f);
+        }
+        dataBuf.rewind();
+
+        buffer = new WebGPUBuffer("height map", WGPUBufferUsage.CopyDst.or(WGPUBufferUsage.Storage), numBytes * Float.BYTES);
+        buffer.write(0, dataBuf, numBytes*Float.BYTES);
     }
 
     public WebGPUBuffer getBuffer(){

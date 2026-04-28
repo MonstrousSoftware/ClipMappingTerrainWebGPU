@@ -34,26 +34,19 @@ public class TerrainShader extends WgDefaultShader {
      * */
     public TerrainShader(Renderable renderable, HeightMap map, float scale, float amplitude) {
         //super(renderable);
+
         super(renderable, new WgModelBatch.Config( Gdx.files.internal("shaders/terrain.wgsl").readString()));
+        this.heightMap = map;
         setHeightMapSize(map.getSize());
         setScale(scale);
         setAmplitude(amplitude);
-        this.heightMap = map;
-
-        // we need to add to group 3 because we can use max 4 groups per pipeline at the same time (max_bind_groups)
-        binder.defineGroup(3, createBindGroupLayout(heightMap.getBuffer().getSize()));
-        binder.defineBinding("heightMap", 3, 1);
-
-        bindHeightMap(heightMap.getBuffer());
-
-        //binder.defineBinding("heightMapSampler", 3, 2);
     }
 
-    private WebGPUBindGroupLayout createBindGroupLayout(int size) {
+    private WebGPUBindGroupLayout createBindGroupLayout() {
         WebGPUBindGroupLayout layout = new WebGPUBindGroupLayout("TerrainShader Binding Group Layout");
         layout.begin();
         // what to put for minBindingSize?
-        layout.addBuffer(1, WGPUShaderStage.Vertex, WGPUBufferBindingType.ReadOnlyStorage, size, false);
+        layout.addBuffer(1, WGPUShaderStage.Vertex, WGPUBufferBindingType.ReadOnlyStorage, 1024, false);
         layout.end();
         return layout;
     }
@@ -72,6 +65,9 @@ public class TerrainShader extends WgDefaultShader {
         defineUniform("scale", 4);
         defineUniform("amplitude", 4);
        //
+        // we need to add to group 3 because we can use max 4 groups per pipeline at the same time (max_bind_groups)
+        binder.defineGroup(3, createBindGroupLayout());
+        binder.defineBinding("heightMap", 3, 1);
     }
 
     public void setHeightMap(HeightMap map){
