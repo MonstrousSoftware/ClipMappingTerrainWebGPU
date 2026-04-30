@@ -69,7 +69,6 @@ public class Terrain implements Disposable {
             @Override
             protected Shader createShader(final Renderable renderable) {
                 terrainShader = new TerrainShader(renderable, heightMap, scale, amplitude);
-               // terrainShader.setHeightMap(heightMap);
                 return terrainShader;
             }
         });
@@ -211,6 +210,8 @@ public class Terrain implements Disposable {
         terrainBatch.begin(cam);
         terrainBatch.render(instances, environment);
         terrainBatch.end();
+        //System.out.println("draw calls: "+terrainBatch.drawCalls + " #renderables:"+terrainBatch.numRenderables+" shader switches:"+terrainBatch.shaderSwitches);
+
     }
 
     public Texture getHeightMapTexture(){

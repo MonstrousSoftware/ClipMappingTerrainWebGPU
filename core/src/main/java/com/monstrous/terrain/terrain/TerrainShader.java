@@ -4,13 +4,12 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.g3d.Renderable;
 import com.github.xpenatan.webgpu.*;
-import com.monstrous.gdx.webgpu.graphics.WgTexture;
 import com.monstrous.gdx.webgpu.graphics.g3d.WgModelBatch;
 import com.monstrous.gdx.webgpu.graphics.g3d.shaders.WgDefaultShader;
 import com.monstrous.gdx.webgpu.wrappers.WebGPUBindGroupLayout;
 import com.monstrous.gdx.webgpu.wrappers.WebGPUBuffer;
 import com.monstrous.gdx.webgpu.wrappers.WebGPURenderPass;
-import com.monstrous.gdx.webgpu.wrappers.WebGPUUniformBuffer;
+
 
 
 /** By creating a dedicated TerrainShader class we can add some relevant uniforms */
@@ -40,6 +39,7 @@ public class TerrainShader extends WgDefaultShader {
         setHeightMapSize(map.getSize());
         setScale(scale);
         setAmplitude(amplitude);
+        bindHeightMap(heightMap.getBuffer());
     }
 
     private WebGPUBindGroupLayout createBindGroupLayout() {
@@ -51,10 +51,7 @@ public class TerrainShader extends WgDefaultShader {
         return layout;
     }
 
-    // todo make constructor param
     private void bindHeightMap(WebGPUBuffer buffer){
-        // note bene: setBuffer should take Buffer not UniformBuffer!
-
         binder.setBuffer("heightMap", buffer, 0, buffer.getSize());
     }
 
@@ -68,10 +65,6 @@ public class TerrainShader extends WgDefaultShader {
         // we need to add to group 3 because we can use max 4 groups per pipeline at the same time (max_bind_groups)
         binder.defineGroup(3, createBindGroupLayout());
         binder.defineBinding("heightMap", 3, 1);
-    }
-
-    public void setHeightMap(HeightMap map){
-        this.heightMap = map;
     }
 
     public void setHeightMapSize(int verticesPerSide){
@@ -120,6 +113,6 @@ public class TerrainShader extends WgDefaultShader {
         super.binder.setUniform("scale", scale);
         super.binder.setUniform("amplitude", amplitude);
 
-        bindHeightMap(heightMap.getBuffer());
+        //bindHeightMap(heightMap.getBuffer());
     }
 }

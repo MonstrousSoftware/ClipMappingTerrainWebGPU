@@ -43,7 +43,7 @@ public class TerrainDemo extends ApplicationAdapter {
 
 	@Override
 	public void create() {
-        terrain = new Terrain(255, 7, 32f);
+        terrain = new Terrain(1023, 7, 32f);
 
         gui = new GUI(this, terrain);
 
